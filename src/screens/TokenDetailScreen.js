@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { View, Text, Pressable, ScrollView, Image, ActivityIndicator, Dimensions, Alert } from 'react-native';
+import { View, Text, Pressable, ScrollView, Image, ActivityIndicator, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTokenDetail, useTokenBars } from '../hooks/useToken';
 import { useLivePrice } from '../hooks/useLivePrice';
 import PriceChart from '../components/PriceChart';
+import SwapModal from '../components/SwapModal';
 
 const TIMEFRAMES = ['1D', '1W', '1M', '3M', '1Y'];
 
@@ -63,9 +64,7 @@ export default function TokenDetailScreen({ route, navigation }) {
   const positive = change >= 0;
   const screenWidth = Dimensions.get('window').width;
 
-  const handleBuySell = (side) => {
-    Alert.alert(`${side} ${symbol}`, 'Jupiter swap wiring coming next', [{ text: 'OK' }]);
-  };
+  const [swapSide, setSwapSide] = useState(null);
 
   return (
     <SafeAreaView className="flex-1 bg-black" edges={['top']}>
@@ -151,18 +150,25 @@ export default function TokenDetailScreen({ route, navigation }) {
 
       <View className="absolute bottom-0 left-0 right-0 px-4 pb-8 pt-3 bg-black border-t border-neutral-900 flex-row gap-3">
         <Pressable
-          onPress={() => handleBuySell('Buy')}
+          onPress={() => setSwapSide('Buy')}
           className="flex-1 bg-green-500 rounded-2xl py-4 items-center active:opacity-70"
         >
           <Text className="text-black font-bold">Buy</Text>
         </Pressable>
         <Pressable
-          onPress={() => handleBuySell('Sell')}
+          onPress={() => setSwapSide('Sell')}
           className="flex-1 bg-red-500 rounded-2xl py-4 items-center active:opacity-70"
         >
           <Text className="text-white font-bold">Sell</Text>
         </Pressable>
       </View>
+
+      <SwapModal
+        visible={!!swapSide}
+        onClose={() => setSwapSide(null)}
+        side={swapSide}
+        token={token ? { ...token, decimals: token.decimals ?? 6 } : null}
+      />
     </SafeAreaView>
   );
 }
