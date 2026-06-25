@@ -1,6 +1,8 @@
 import { View, Text, FlatList, Pressable, Image, RefreshControl, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTrendingTokens } from '../hooks/useTrendingTokens';
+import { useSparkline } from '../hooks/useToken';
+import Sparkline from '../components/Sparkline';
 
 function formatPrice(p) {
   const n = Number(p);
@@ -21,6 +23,7 @@ function TokenRow({ row, onPress }) {
   const t = row.token;
   const change = Number(row.change24);
   const positive = change >= 0;
+  const { data: bars } = useSparkline(t.address);
   return (
     <Pressable onPress={onPress} className="flex-row items-center px-4 py-3 active:bg-neutral-900">
       <View className="w-10 h-10 rounded-full bg-neutral-800 mr-3 overflow-hidden">
@@ -28,9 +31,12 @@ function TokenRow({ row, onPress }) {
           <Image source={{ uri: t.info.imageThumbUrl }} className="w-full h-full" />
         ) : null}
       </View>
-      <View className="flex-1">
+      <View className="flex-1 mr-2">
         <Text className="text-white font-semibold" numberOfLines={1}>{t.symbol}</Text>
         <Text className="text-neutral-500 text-xs" numberOfLines={1}>{t.name}</Text>
+      </View>
+      <View className="mr-3">
+        <Sparkline bars={bars} width={56} height={24} color={positive ? '#00E676' : '#FF3B30'} />
       </View>
       <View className="items-end">
         <Text className="text-white font-semibold">{formatPrice(row.priceUSD)}</Text>

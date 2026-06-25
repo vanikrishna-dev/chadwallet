@@ -31,3 +31,16 @@ export function useTokenBars(address, timeframe = '1D') {
     staleTime: 30_000,
   });
 }
+
+export function useSparkline(address) {
+  return useQuery({
+    queryKey: ['sparkline', address],
+    queryFn: () => {
+      const to = Math.floor(Date.now() / 1000);
+      const from = to - 24 * 60 * 60;
+      return fetchTokenBars(address, { from, to, resolution: '60' });
+    },
+    enabled: !!address,
+    staleTime: 5 * 60_000,
+  });
+}
