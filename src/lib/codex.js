@@ -48,3 +48,57 @@ export async function fetchTrendingTokens(limit = 30) {
   });
   return data.filterTokens.results;
 }
+
+const TOKEN_DETAIL_QUERY = `
+  query TokenDetail($tokens: [String!]!) {
+    filterTokens(tokens: $tokens, limit: 1) {
+      results {
+        token {
+          address
+          name
+          symbol
+          decimals
+          info { imageThumbUrl }
+        }
+        priceUSD
+        change24
+        volume24
+        marketCap
+        liquidity
+        buyCount24
+        sellCount24
+        uniqueBuys24
+        uniqueSells24
+        holders
+      }
+    }
+  }
+`;
+
+export async function fetchTokenDetail(address) {
+  const data = await codexQuery(TOKEN_DETAIL_QUERY, {
+    tokens: [`${address}:${SOLANA_NETWORK_ID}`],
+  });
+  return data.filterTokens.results[0] ?? null;
+}
+
+const BARS_QUERY = `
+  query Bars($symbol: String!, $from: Int!, $to: Int!, $resolution: String!) {
+    getBars(symbol: $symbol, from: $from, to: $to, resolution: $resolution) {
+      t
+      c
+    }
+  }
+`;
+
+export async function fetchTokenBars(address, { from, to, resolution }) {
+  const data = await codexQuery(BARS_QUERY, {
+    symbol: `${address}:${SOLANA_NETWORK_ID}`,
+    from,
+    to,
+    resolution,
+  });
+  const bars = data.getBars;
+  if (!bars) return [];
+  return bars.t.map((t, i) => ({ t, c: bars.c[i] })).filter((b) => b.c != null);
+}
