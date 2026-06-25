@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { View, Text, Pressable, ScrollView, Image, ActivityIndicator, Dimensions, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTokenDetail, useTokenBars } from '../hooks/useToken';
+import { useLivePrice } from '../hooks/useLivePrice';
 import PriceChart from '../components/PriceChart';
 
 const TIMEFRAMES = ['1D', '1W', '1M', '3M', '1Y'];
@@ -37,6 +38,24 @@ export default function TokenDetailScreen({ route, navigation }) {
   const [timeframe, setTimeframe] = useState('1D');
   const { data: detail, isLoading: detailLoading } = useTokenDetail(address);
   const { data: bars, isLoading: barsLoading } = useTokenBars(address, timeframe);
+  const live = useLivePrice(address);
+
+  const basePrice = Number(detail?.priceUSD);
+  const livePrice = live?.price;
+  const displayPrice = livePrice ?? basePrice;
+  const [flash, setFlash] = useState(null);
+  const prevPriceRef = useRef(null);
+
+  useEffect(() => {
+    if (livePrice == null) return;
+    const prev = prevPriceRef.current;
+    if (prev != null && livePrice !== prev) {
+      setFlash(livePrice > prev ? 'up' : 'down');
+      const t = setTimeout(() => setFlash(null), 600);
+      return () => clearTimeout(t);
+    }
+    prevPriceRef.current = livePrice;
+  }, [livePrice]);
 
   const token = detail?.token;
   const symbol = token?.symbol ?? passedSymbol;
@@ -64,7 +83,17 @@ export default function TokenDetailScreen({ route, navigation }) {
 
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
         <View className="px-4 pt-4">
-          <Text className="text-white text-4xl font-bold">{formatPrice(detail?.priceUSD)}</Text>
+          <View className="flex-row items-center">
+            <Text className={`text-4xl font-bold ${flash === 'up' ? 'text-green-500' : flash === 'down' ? 'text-red-500' : 'text-white'}`}>
+              {formatPrice(displayPrice)}
+            </Text>
+            {live ? (
+              <View className="ml-3 flex-row items-center bg-neutral-900 px-2 py-1 rounded-full">
+                <View className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5" />
+                <Text className="text-neutral-400 text-xs">LIVE</Text>
+              </View>
+            ) : null}
+          </View>
           <Text className={positive ? 'text-green-500 mt-1' : 'text-red-500 mt-1'}>
             {isFinite(change) ? `${positive ? '+' : ''}${(change * 100).toFixed(2)}% (24h)` : '—'}
           </Text>
