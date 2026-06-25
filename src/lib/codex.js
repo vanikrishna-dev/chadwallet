@@ -91,6 +91,30 @@ const BARS_QUERY = `
   }
 `;
 
+const TOKENS_BY_ADDRESS_QUERY = `
+  query TokensByAddress($tokens: [String!]!) {
+    filterTokens(tokens: $tokens, limit: 50) {
+      results {
+        token {
+          address
+          name
+          symbol
+          info { imageThumbUrl }
+        }
+        priceUSD
+        change24
+      }
+    }
+  }
+`;
+
+export async function fetchTokensByAddresses(addresses) {
+  if (!addresses.length) return [];
+  const ids = addresses.map((a) => `${a}:${SOLANA_NETWORK_ID}`);
+  const data = await codexQuery(TOKENS_BY_ADDRESS_QUERY, { tokens: ids });
+  return data.filterTokens.results;
+}
+
 export async function fetchTokenBars(address, { from, to, resolution }) {
   const data = await codexQuery(BARS_QUERY, {
     symbol: `${address}:${SOLANA_NETWORK_ID}`,
