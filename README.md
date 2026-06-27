@@ -33,7 +33,7 @@ npx expo start         # scan QR with Expo Go (SDK 54)
 env vars you need:
 
 - `EXPO_PUBLIC_PRIVY_APP_ID` + `EXPO_PUBLIC_PRIVY_CLIENT_ID` from Privy dashboard
-- `EXPO_PUBLIC_CODEX_API_KEY` from Codex.io (free plan is fine)
+- `EXPO_PUBLIC_CODEX_PROXY_URL` — your Cloudflare Worker URL that proxies Codex (Codex API key lives on the worker as a secret, not in the bundle)
 - `EXPO_PUBLIC_SOLANA_RPC_URL` from Alchemy
 - `EXPO_PUBLIC_SUPABASE_URL` + `EXPO_PUBLIC_SUPABASE_ANON_KEY` from Supabase
 
@@ -63,15 +63,12 @@ a few places where i deviated from the spec — figured being upfront beats gett
 
 **no Apple sign-in.** native Apple Sign-In needs an Apple Developer account ($99/yr). spec said all services have free tier, this one doesn't. Google login works fine and Privy supports both, so adding Apple is one config + half an hour once the dev account is paid for.
 
-**no Cloudflare.** the obvious use case is proxying the Codex key. but the Codex free plan has no auto-charge — if the key leaks you just revoke it, no billing damage. for a take-home that risk profile is fine. in prod i'd put a Worker in front of it.
-
 **live ticks are 5-second polling, not websocket.** first attempt used Codex's `onPricesUpdated` subscription. their free plan rejected the connection with `4403 Websockets are not enabled for your account`. polling `fetchTokenDetail` every 5s gives the same LIVE pill + price flash UX, just slightly less efficient.
 
 **networth chart fallback.** the chart needs daily history. fresh wallets have none. so when there's <2 real data points it renders a clearly-labeled `DEMO_BARS` curve. that's why you'll see a "demo data" pill on the reviewer's first run — the actual feature works, the data just isn't there yet.
 
 ## what i'd do next
 
-- proxy Codex through a Cloudflare Worker, drop the key from the bundle
 - add Apple sign-in (just needs the dev account)
 - write tests around the swap flow — it's the highest-risk path
 - background-aware polling — current implementation keeps polling when the screen isn't visible
@@ -84,3 +81,4 @@ a few places where i deviated from the spec — figured being upfront beats gett
 - no error boundary, a crash unmounts the navigator
 - cold start has a brief blank state before Privy auth resolves
 - activity feed shows latest 8, no pagination
+- trending screen fires 31 parallel Codex queries (1 list + 30 sparklines) which occasionally hits the Codex Free plan rate limit on pull-to-refresh — react-query retries handle it, but a Cloudflare Worker cache would be the proper fix

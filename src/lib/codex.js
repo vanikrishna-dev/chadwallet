@@ -1,15 +1,11 @@
-const CODEX_URL = 'https://graph.codex.io/graphql';
-const CODEX_KEY = process.env.EXPO_PUBLIC_CODEX_API_KEY;
+const CODEX_URL = process.env.EXPO_PUBLIC_CODEX_PROXY_URL;
 
 export const SOLANA_NETWORK_ID = 1399811149;
 
 export async function codexQuery(query, variables) {
   const res = await fetch(CODEX_URL, {
     method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      Authorization: CODEX_KEY,
-    },
+    headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ query, variables }),
   });
   const json = await res.json();
