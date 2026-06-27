@@ -115,6 +115,27 @@ export async function fetchTokensByAddresses(addresses) {
   return data.filterTokens.results;
 }
 
+const TOKEN_EVENTS_QUERY = `
+  query GetTokenEvents($query: EventsQueryInput!, $limit: Int) {
+    getTokenEvents(query: $query, limit: $limit) {
+      items {
+        eventType
+        timestamp
+        maker
+        transactionHash
+      }
+    }
+  }
+`;
+
+export async function fetchTokenEvents(address, limit = 20) {
+  const data = await codexQuery(TOKEN_EVENTS_QUERY, {
+    query: { address, networkId: SOLANA_NETWORK_ID },
+    limit,
+  });
+  return data.getTokenEvents?.items ?? [];
+}
+
 export async function fetchTokenBars(address, { from, to, resolution }) {
   const data = await codexQuery(BARS_QUERY, {
     symbol: `${address}:${SOLANA_NETWORK_ID}`,

@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { View, Text, Pressable, ScrollView, Image, ActivityIndicator, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTokenDetail, useTokenBars } from '../hooks/useToken';
+import { useEmbeddedSolanaWallet } from '@privy-io/expo';
+import { useTokenDetail, useTokenBars, useTokenEvents } from '../hooks/useToken';
 import { useLivePrice } from '../hooks/useLivePrice';
+import { useHoldings } from '../hooks/usePortfolio';
 import PriceChart from '../components/PriceChart';
 import SwapModal from '../components/SwapModal';
 
@@ -25,6 +27,17 @@ function formatBigNum(n) {
   return `$${x.toFixed(0)}`;
 }
 
+function formatAgo(ts) {
+  const seconds = Math.max(0, Math.floor(Date.now() / 1000 - Number(ts)));
+  if (seconds < 60) return `${seconds}s ago`;
+  const m = Math.floor(seconds / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  return `${d}d ago`;
+}
+
 function StatCell({ label, value }) {
   return (
     <View className="flex-1 py-3">
@@ -39,6 +52,7 @@ export default function TokenDetailScreen({ route, navigation }) {
   const [timeframe, setTimeframe] = useState('1D');
   const { data: detail, isLoading: detailLoading } = useTokenDetail(address);
   const { data: bars, isLoading: barsLoading } = useTokenBars(address, timeframe);
+  const { data: events } = useTokenEvents(address);
   const live = useLivePrice(address);
 
   const basePrice = Number(detail?.priceUSD);
@@ -63,6 +77,12 @@ export default function TokenDetailScreen({ route, navigation }) {
   const change = Number(detail?.change24);
   const positive = change >= 0;
   const screenWidth = Dimensions.get('window').width;
+
+  const { wallets } = useEmbeddedSolanaWallet();
+  const walletAddress = wallets?.[0]?.address;
+  const { data: portfolio } = useHoldings(walletAddress);
+  const position = portfolio?.tokens?.find((t) => t.mint === address);
+  const hasBalance = !!position && position.amount > 0;
 
   const [swapSide, setSwapSide] = useState(null);
 
@@ -142,7 +162,44 @@ export default function TokenDetailScreen({ route, navigation }) {
           </View>
         </View>
 
+        <View className="mx-4 mt-6 bg-neutral-900 rounded-2xl p-4">
+          <Text className="text-neutral-500 text-xs">Your position</Text>
+          <Text className="text-white text-lg font-semibold mt-1">
+            {position ? `${position.amount.toFixed(4)} ${symbol}` : `0 ${symbol ?? ''}`}
+          </Text>
+          {position ? (
+            <Text className="text-neutral-500 text-xs mt-1">
+              ≈ ${position.valueUsd.toFixed(2)}
+            </Text>
+          ) : null}
+        </View>
+
         <View className="mx-4 mt-6">
+          <Text className="text-neutral-500 text-xs uppercase mb-3">Recent activity</Text>
+          {!events ? (
+            <ActivityIndicator color="#737373" />
+          ) : events.length === 0 ? (
+            <Text className="text-neutral-600 text-xs">no recent trades</Text>
+          ) : (
+            <View className="bg-neutral-900 rounded-2xl overflow-hidden">
+              {events.slice(0, 8).map((e, i) => {
+                const isBuy = /buy/i.test(e.eventType);
+                const ago = e.timestamp ? formatAgo(e.timestamp) : '—';
+                return (
+                  <View key={e.transactionHash + i} className={`flex-row items-center px-4 py-3 ${i > 0 ? 'border-t border-neutral-800' : ''}`}>
+                    <Text className={`text-xs font-semibold w-12 ${isBuy ? 'text-green-500' : 'text-red-500'}`}>{e.eventType}</Text>
+                    <Text className="text-neutral-500 text-xs flex-1 ml-2" numberOfLines={1}>
+                      {e.maker ? `${e.maker.slice(0, 4)}…${e.maker.slice(-4)}` : '—'}
+                    </Text>
+                    <Text className="text-neutral-500 text-xs">{ago}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+        </View>
+
+        <View className="mx-4 mt-4">
           <Text className="text-neutral-500 text-xs">Contract</Text>
           <Text className="text-white text-xs mt-1" selectable numberOfLines={1}>{address}</Text>
         </View>
@@ -156,10 +213,11 @@ export default function TokenDetailScreen({ route, navigation }) {
           <Text className="text-black font-bold">Buy</Text>
         </Pressable>
         <Pressable
-          onPress={() => setSwapSide('Sell')}
-          className="flex-1 bg-red-500 rounded-2xl py-4 items-center active:opacity-70"
+          onPress={() => hasBalance && setSwapSide('Sell')}
+          disabled={!hasBalance}
+          className={`flex-1 rounded-2xl py-4 items-center ${hasBalance ? 'bg-red-500 active:opacity-70' : 'bg-neutral-800'}`}
         >
-          <Text className="text-white font-bold">Sell</Text>
+          <Text className={`font-bold ${hasBalance ? 'text-white' : 'text-neutral-600'}`}>Sell</Text>
         </Pressable>
       </View>
 

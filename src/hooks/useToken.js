@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchTokenDetail, fetchTokenBars } from '../lib/codex';
+import { fetchTokenDetail, fetchTokenBars, fetchTokenEvents } from '../lib/codex';
 
 export function useTokenDetail(address) {
   return useQuery({
@@ -29,6 +29,16 @@ export function useTokenBars(address, timeframe = '1D') {
     },
     enabled: !!address,
     staleTime: 30_000,
+  });
+}
+
+export function useTokenEvents(address) {
+  return useQuery({
+    queryKey: ['token-events', address],
+    queryFn: () => fetchTokenEvents(address, 20),
+    enabled: !!address,
+    staleTime: 30_000,
+    refetchInterval: 30_000,
   });
 }
 
