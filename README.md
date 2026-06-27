@@ -81,6 +81,5 @@ a few places where i deviated from the spec — figured being upfront beats gett
 
 - no tests
 - no error boundary, a crash unmounts the navigator
-- cold start has a brief blank state before Privy auth resolves
 - activity feed shows latest 8, no pagination
 - trending screen fires 31 parallel Codex queries (1 list + 30 sparklines) which occasionally hits the Codex Free plan rate limit on pull-to-refresh — react-query retries handle it, but a Cloudflare Worker cache would be the proper fix
