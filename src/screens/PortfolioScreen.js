@@ -1,9 +1,27 @@
 import { useState } from 'react';
-import { View, Text, FlatList, Pressable, Image, RefreshControl, ActivityIndicator, Modal, Alert } from 'react-native';
+import { View, Text, FlatList, Pressable, Image, RefreshControl, ActivityIndicator, Modal, Alert, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import { usePrivy, useEmbeddedSolanaWallet } from '@privy-io/expo';
 import { useHoldings, useRecentActivity } from '../hooks/usePortfolio';
+import { useNetworthHistory, useRecordNetworth } from '../hooks/useNetworthHistory';
+import PriceChart from '../components/PriceChart';
+
+const DEMO_BARS = [
+  { t: 0, c: 50.00 },
+  { t: 1, c: 48.20 },
+  { t: 2, c: 67.40 },
+  { t: 3, c: 59.80 },
+  { t: 4, c: 84.10 },
+  { t: 5, c: 112.50 },
+  { t: 6, c: 95.30 },
+  { t: 7, c: 128.70 },
+  { t: 8, c: 176.40 },
+  { t: 9, c: 158.20 },
+  { t: 10, c: 204.90 },
+  { t: 11, c: 187.60 },
+  { t: 12, c: 241.30 },
+];
 
 function formatUsd(n) {
   const x = Number(n);
@@ -77,6 +95,15 @@ export default function PortfolioScreen() {
   const [creating, setCreating] = useState(false);
   const holdings = useHoldings(address);
   const activity = useRecentActivity(address);
+  const networth = useNetworthHistory(address);
+  useRecordNetworth(address, holdings.data?.totalUsd);
+
+  const realBars = (networth.data ?? []).map((row) => ({ t: row.date, c: Number(row.total_usd) }));
+  const isDemo = realBars.length < 2;
+  const chartBars = isDemo ? DEMO_BARS : realBars;
+  const networthChange = chartBars[chartBars.length - 1].c - chartBars[0].c;
+  const chartColor = networthChange >= 0 ? '#00E676' : '#FF3B30';
+  const screenWidth = Dimensions.get('window').width;
 
   const copyAddress = async () => {
     if (!address) return;
@@ -125,6 +152,19 @@ export default function PortfolioScreen() {
               ) : (
                 <Text className="text-white text-4xl font-bold mt-1">{formatUsd(holdings.data?.totalUsd)}</Text>
               )}
+            </View>
+            <View className="px-4 pb-4">
+              <View className="flex-row justify-end mb-1">
+                {isDemo ? (
+                  <View className="bg-neutral-800 px-2 py-0.5 rounded-full">
+                    <Text className="text-neutral-400 text-[10px]">demo data</Text>
+                  </View>
+                ) : null}
+              </View>
+              <PriceChart bars={chartBars} width={screenWidth - 32} height={120} color={chartColor} />
+              <Text className="text-neutral-600 text-xs text-center mt-2">
+                {isDemo ? 'sample 13-day curve · real chart populates daily' : `last ${chartBars.length} days`}
+              </Text>
             </View>
             <View className="px-4 pb-3">
               <Text className="text-neutral-500 text-xs uppercase">Holdings</Text>
