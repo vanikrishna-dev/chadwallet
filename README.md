@@ -4,10 +4,12 @@ Solana memecoin trading wallet. Take-home for ChadWallet's mobile engineer role.
 
 ## demo
 
-- live preview: _<APPETIZE_URL_PLACEHOLDER>_
+- live preview: https://appetize.io/app/b_cvznd43kcka36aust7lh7kwifu
 - repo: https://github.com/vanikrishna-dev/chadwallet
 
 The Appetize wallet is unfunded. The buy flow goes all the way through quoting, Privy signing, and submission — it gets rejected at the network with "insufficient funds", which I surface as a friendly error in the swap modal. Send some SOL to the address (green pill bottom-right of Account) to actually complete a swap.
+
+Appetize streams the simulator from a cloud data center, so interactions feel laggier than running locally. For a smoother experience, clone + run via Expo Go (steps below).
 
 ## what's there
 
