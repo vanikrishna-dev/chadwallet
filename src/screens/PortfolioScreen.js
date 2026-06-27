@@ -5,7 +5,9 @@ import * as Clipboard from 'expo-clipboard';
 import { usePrivy, useEmbeddedSolanaWallet } from '@privy-io/expo';
 import { useHoldings, useRecentActivity } from '../hooks/usePortfolio';
 import { useNetworthHistory, useRecordNetworth } from '../hooks/useNetworthHistory';
+import { Ionicons } from '@expo/vector-icons';
 import PriceChart from '../components/PriceChart';
+import QRCodeStyled from 'react-native-qrcode-styled';
 
 const DEMO_BARS = [
   { t: 0, c: 50.00 },
@@ -134,6 +136,7 @@ export default function PortfolioScreen() {
       <FlatList
         data={holdings.data?.tokens ?? []}
         keyExtractor={(r) => r.mint}
+        showsVerticalScrollIndicator={false}
         renderItem={({ item }) => <HoldingRow row={item} />}
         ItemSeparatorComponent={() => <View className="h-px bg-neutral-900 ml-16" />}
         refreshControl={
@@ -178,8 +181,9 @@ export default function PortfolioScreen() {
               {activity.isLoading ? <ActivityIndicator color="#fff" /> : null}
             </View>
             {(activity.data ?? []).length === 0 ? (
-              <View className="px-4 py-6">
-                <Text className="text-neutral-500 text-xs text-center">no transactions yet</Text>
+              <View className="px-4 py-6 items-center">
+                <Ionicons name="receipt-outline" size={28} color="#525252" />
+                <Text className="text-neutral-500 text-xs text-center mt-2">Your transaction history will show up here once you start trading</Text>
               </View>
             ) : (
               <View>
@@ -195,9 +199,10 @@ export default function PortfolioScreen() {
         }
         ListEmptyComponent={
           holdings.isLoading ? null : (
-            <View className="px-4 py-8">
-              <Text className="text-neutral-500 text-xs text-center">no tokens in this wallet yet</Text>
-              <Text className="text-neutral-600 text-xs text-center mt-2">deposit SOL to start trading</Text>
+            <View className="px-4 py-8 items-center">
+              <Ionicons name="wallet-outline" size={32} color="#525252" />
+              <Text className="text-neutral-400 text-sm text-center mt-3">No tokens yet</Text>
+              <Text className="text-neutral-600 text-xs text-center mt-1">Fund your wallet to begin</Text>
             </View>
           )
         }
@@ -225,7 +230,21 @@ export default function PortfolioScreen() {
         <Pressable onPress={() => setAddressOpen(false)} className="flex-1 bg-black/80 items-center justify-center px-6">
           <View className="bg-neutral-900 rounded-3xl px-6 py-6 w-full">
             <Text className="text-white text-lg font-bold text-center">Your Solana wallet</Text>
-            <Text className="text-white text-xs text-center mt-4" selectable>{address}</Text>
+            {address ? (
+              <View className="items-center mt-5">
+                <View className="bg-white p-3 rounded-2xl">
+                  <QRCodeStyled
+                    data={address}
+                    pieceSize={5}
+                    pieceBorderRadius={1}
+                    color="#000000"
+                    outerEyesOptions={{ borderRadius: 8, color: '#000000' }}
+                    innerEyesOptions={{ borderRadius: 4, color: '#000000' }}
+                  />
+                </View>
+              </View>
+            ) : null}
+            <Text className="text-white text-xs text-center mt-5" selectable>{address}</Text>
             <Pressable onPress={copyAddress} className="bg-green-500 rounded-2xl py-3 mt-6 items-center active:opacity-70">
               <Text className="text-black font-bold">Copy address</Text>
             </Pressable>

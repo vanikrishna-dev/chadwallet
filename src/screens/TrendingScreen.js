@@ -1,5 +1,6 @@
 import { View, Text, FlatList, Pressable, Image, RefreshControl, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useTrendingTokens } from '../hooks/useTrendingTokens';
 import { useSparkline } from '../hooks/useToken';
 import Sparkline from '../components/Sparkline';
@@ -64,16 +65,18 @@ export default function TrendingScreen({ navigation }) {
         </View>
       ) : error ? (
         <View className="flex-1 items-center justify-center px-6">
-          <Text className="text-red-500 mb-2">failed to load tokens</Text>
+          <Ionicons name="alert-circle-outline" size={36} color="#737373" />
+          <Text className="text-white text-base mt-3 mb-1">Couldn't load trending tokens.</Text>
           <Text className="text-neutral-500 text-xs text-center">{String(error.message)}</Text>
           <Pressable onPress={refetch} className="mt-4 bg-neutral-900 px-4 py-2 rounded-xl">
-            <Text className="text-white">retry</Text>
+            <Text className="text-white">Tap to retry</Text>
           </Pressable>
         </View>
       ) : (
         <FlatList
           data={data}
           keyExtractor={(r) => r.token.address}
+          showsVerticalScrollIndicator={false}
           renderItem={({ item }) => (
             <TokenRow
               row={item}

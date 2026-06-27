@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { View, Text, Pressable, ScrollView, Image, ActivityIndicator, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useEmbeddedSolanaWallet } from '@privy-io/expo';
 import { useTokenDetail, useTokenBars, useTokenEvents } from '../hooks/useToken';
 import { useLivePrice } from '../hooks/useLivePrice';
@@ -100,7 +101,7 @@ export default function TokenDetailScreen({ route, navigation }) {
         <Text className="text-white text-lg font-semibold flex-1">{symbol ?? 'Token'}</Text>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
         <View className="px-4 pt-4">
           <View className="flex-row items-center">
             <Text className={`text-4xl font-bold ${flash === 'up' ? 'text-green-500' : flash === 'down' ? 'text-red-500' : 'text-white'}`}>
@@ -179,7 +180,10 @@ export default function TokenDetailScreen({ route, navigation }) {
           {!events ? (
             <ActivityIndicator color="#737373" />
           ) : events.length === 0 ? (
-            <Text className="text-neutral-600 text-xs">no recent trades</Text>
+            <View className="items-center py-4">
+              <Ionicons name="time-outline" size={28} color="#525252" />
+              <Text className="text-neutral-500 text-xs mt-2">Be the first to trade this one</Text>
+            </View>
           ) : (
             <View className="bg-neutral-900 rounded-2xl overflow-hidden">
               {events.slice(0, 8).map((e, i) => {

@@ -55,7 +55,7 @@ create policy "update" on networth_snapshots for update using (true);
 
 ## stack
 
-Expo 54, RN 0.81, JS (not TS). NativeWind for styling. React Navigation 7. Privy Expo SDK for auth + embedded Solana wallet. Codex GraphQL for everything token-data. Jupiter v1 swap. Alchemy RPC for balances and signatures. Supabase for daily networth snapshots. react-query everywhere for caching.
+Expo 54, RN 0.81, JS (not TS). NativeWind for styling. React Navigation 7. Privy Expo SDK for auth + embedded Solana wallet. Codex GraphQL for everything token-data, fronted by a Cloudflare Worker so the API key stays out of the bundle. Jupiter v1 swap. Alchemy RPC for balances and signatures. Supabase for daily networth snapshots. react-query everywhere for caching. Built with Claude Code as the pair.
 
 ## things to flag
 
