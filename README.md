@@ -1,0 +1,86 @@
+# chadwallet
+
+Solana memecoin trading wallet. Take-home for ChadWallet's mobile engineer role.
+
+## demo
+
+- live preview: _<APPETIZE_URL_PLACEHOLDER>_
+- repo: https://github.com/vanikrishna-dev/chadwallet
+
+The Appetize wallet is unfunded. The buy flow goes all the way through quoting, Privy signing, and submission — it gets rejected at the network with "insufficient funds", which I surface as a friendly error in the swap modal. Send some SOL to the address (green pill bottom-right of Account) to actually complete a swap.
+
+## what's there
+
+four screens, all three bonuses:
+
+- login — Privy Google + email
+- trending — pull to refresh, sparklines per row
+- token detail — price chart with 5 timeframes, live price ticks, stats, recent trades feed, buy/sell
+- portfolio — holdings, recent txs, floating address FAB, 13-day networth chart
+
+swap goes through Jupiter v1 lite-api. Privy provider signs the versioned tx and submits via Alchemy RPC.
+
+## running it locally
+
+```bash
+git clone https://github.com/vanikrishna-dev/chadwallet
+cd chadwallet
+npm install
+cp .env.example .env   # fill in keys
+npx expo start         # scan QR with Expo Go (SDK 54)
+```
+
+env vars you need:
+
+- `EXPO_PUBLIC_PRIVY_APP_ID` + `EXPO_PUBLIC_PRIVY_CLIENT_ID` from Privy dashboard
+- `EXPO_PUBLIC_CODEX_API_KEY` from Codex.io (free plan is fine)
+- `EXPO_PUBLIC_SOLANA_RPC_URL` from Alchemy
+- `EXPO_PUBLIC_SUPABASE_URL` + `EXPO_PUBLIC_SUPABASE_ANON_KEY` from Supabase
+
+supabase table:
+
+```sql
+create table networth_snapshots (
+  wallet text not null,
+  date date not null,
+  total_usd numeric not null,
+  created_at timestamptz default now(),
+  primary key (wallet, date)
+);
+alter table networth_snapshots enable row level security;
+create policy "read" on networth_snapshots for select using (true);
+create policy "insert" on networth_snapshots for insert with check (true);
+create policy "update" on networth_snapshots for update using (true);
+```
+
+## stack
+
+Expo 54, RN 0.81, JS (not TS). NativeWind for styling. React Navigation 7. Privy Expo SDK for auth + embedded Solana wallet. Codex GraphQL for everything token-data. Jupiter v1 swap. Alchemy RPC for balances and signatures. Supabase for daily networth snapshots. react-query everywhere for caching.
+
+## things to flag
+
+a few places where i deviated from the spec — figured being upfront beats getting called out.
+
+**no Apple sign-in.** native Apple Sign-In needs an Apple Developer account ($99/yr). spec said all services have free tier, this one doesn't. Google login works fine and Privy supports both, so adding Apple is one config + half an hour once the dev account is paid for.
+
+**no Cloudflare.** the obvious use case is proxying the Codex key. but the Codex free plan has no auto-charge — if the key leaks you just revoke it, no billing damage. for a take-home that risk profile is fine. in prod i'd put a Worker in front of it.
+
+**live ticks are 5-second polling, not websocket.** first attempt used Codex's `onPricesUpdated` subscription. their free plan rejected the connection with `4403 Websockets are not enabled for your account`. polling `fetchTokenDetail` every 5s gives the same LIVE pill + price flash UX, just slightly less efficient.
+
+**networth chart fallback.** the chart needs daily history. fresh wallets have none. so when there's <2 real data points it renders a clearly-labeled `DEMO_BARS` curve. that's why you'll see a "demo data" pill on the reviewer's first run — the actual feature works, the data just isn't there yet.
+
+## what i'd do next
+
+- proxy Codex through a Cloudflare Worker, drop the key from the bundle
+- add Apple sign-in (just needs the dev account)
+- write tests around the swap flow — it's the highest-risk path
+- background-aware polling — current implementation keeps polling when the screen isn't visible
+- Sentry for crashes
+- save swap signatures to Supabase, build a real per-trade pnl view
+
+## known limitations
+
+- no tests
+- no error boundary, a crash unmounts the navigator
+- cold start has a brief blank state before Privy auth resolves
+- activity feed shows latest 8, no pagination
