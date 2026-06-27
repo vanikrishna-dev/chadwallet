@@ -9,7 +9,10 @@
     "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.vanikrishna.chadwallet"
+      "bundleIdentifier": "com.vanikrishna.chadwallet",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.vanikrishna.chadwallet",
@@ -26,6 +29,12 @@
     "plugins": [
       "expo-secure-store",
       "expo-web-browser"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "125cd751-6745-4ad6-a253-1053a4094af5"
+      }
+    },
+    "owner": "vanikr"
   }
 }
